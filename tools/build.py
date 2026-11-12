@@ -19,7 +19,7 @@ NAV = [
 ARROW = '<svg aria-hidden="true"><use href="assets/icons.svg#arrow"/></svg>'
 
 # Web3Forms access key (openbaar bedoeld; aan te vragen op web3forms.com met info@saasprojects.nl)
-WEB3FORMS_KEY = "VUL-HIER-DE-WEB3FORMS-SLEUTEL-IN"
+WEB3FORMS_KEY = "5a45a47b-115b-4865-8482-a3fdf79f6954"
 
 
 def header(current, dark):
