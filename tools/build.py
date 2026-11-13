@@ -1,4 +1,5 @@
 """Builds the saasprojects.nl pages from src/*.html fragments with a shared layout."""
+import hashlib
 import json
 import pathlib
 import re
@@ -164,7 +165,7 @@ def page(meta, body):
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preload" href="assets/fonts/montserrat.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css">{ld}
+  <link rel="stylesheet" href="assets/css/style.css?v={asset_version('assets/css/style.css')}">{ld}
 </head>
 <body>
   <a class="skip" href="#main">Naar de inhoud</a>
@@ -177,10 +178,15 @@ def page(meta, body):
 
 {FOOTER}
 
-  <script src="assets/js/main.js" defer></script>
+  <script src="assets/js/main.js?v={asset_version('assets/js/main.js')}" defer></script>
 </body>
 </html>
 '''
+
+
+def asset_version(path):
+    p = OUT / path
+    return hashlib.sha1(p.read_bytes()).hexdigest()[:8] if p.exists() else "1"
 
 
 HELPERS = {"contact_form": contact_form, "next_link": next_link, "ARROW": ARROW, "WEB3FORMS_KEY": WEB3FORMS_KEY}
