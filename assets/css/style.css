@@ -838,3 +838,4 @@ body.menu-open .nav-toggle, body.menu-open .brand { color: var(--ink); }
   .facts { grid-template-columns: 1.15fr 1fr .9fr; }
   .fact span { letter-spacing: .06em; padding-right: 6px; }
 }
+.addr-note { display: inline-block; margin-top: 4px; font-size: .78rem; color: var(--muted); font-family: var(--sans); font-weight: 400; letter-spacing: .02em; }

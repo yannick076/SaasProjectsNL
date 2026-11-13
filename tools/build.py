@@ -62,7 +62,7 @@ FOOTER = '''  <footer class="footer">
           <ul>
             <li><a href="tel:+31626889789">06-26889789</a></li>
             <li><a href="mailto:info@saasprojects.nl">info@saasprojects.nl</a></li>
-            <li>Hallenweg 16<br>5683 CT Best</li>
+            <li>Hallenweg 16<br>5683 CT Best<br><span class="addr-note">Geen bezoekadres</span></li>
           </ul>
         </div>
         <div>
@@ -110,7 +110,7 @@ def contact_form(name, subject_options=None, phone=False, title="Neem <em>contac
             <li><small>Telefoon</small><a href="tel:+31626889789">06-26889789</a></li>
             <li><small>WhatsApp</small><a href="https://wa.me/31626889789" rel="noopener">Stuur een bericht</a></li>
             <li><small>E-mail</small><a href="mailto:info@saasprojects.nl">info@saasprojects.nl</a></li>
-            <li><small>Adres</small><span>Hallenweg 16, 5683 CT Best</span></li>
+            <li><small>Adres</small><span>Hallenweg 16, 5683 CT Best<br><span class="addr-note">Geen bezoekadres</span></span></li>
           </ul>
         </div>
         <form class="form reveal" name="{name}" method="POST" action="https://api.web3forms.com/submit">

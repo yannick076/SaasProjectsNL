@@ -38,7 +38,7 @@ BODY = '''
           <div class="legal-card reveal">
             <span class="label">Contact</span>
             <dl>
-              <div><dt>Adres</dt><dd>Hallenweg 16<br>5683 CT Best</dd></div>
+              <div><dt>Adres</dt><dd>Hallenweg 16<br>5683 CT Best<br><span class="addr-note">Geen bezoekadres</span></dd></div>
               <div><dt>Telefoon</dt><dd><a href="tel:+31626889789">06-26889789</a></dd></div>
               <div><dt>E-mail</dt><dd><a href="mailto:info@saasprojects.nl">info@saasprojects.nl</a></dd></div>
             </dl>
