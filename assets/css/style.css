@@ -839,3 +839,19 @@ body.menu-open .nav-toggle, body.menu-open .brand { color: var(--ink); }
   .fact span { letter-spacing: .06em; padding-right: 6px; }
 }
 .addr-note { display: inline-block; margin-top: 4px; font-size: .78rem; color: var(--muted); font-family: var(--sans); font-weight: 400; letter-spacing: .02em; }
+
+/* Homepage: logo-animatie naast de tekst */
+.hero--motion { grid-template-columns: 1fr auto; align-items: center; }
+.hero--motion::before { display: none; }
+.hero__motion { position: relative; z-index: 1; padding: 48px max(20px, calc((100vw - var(--max)) / 2 + 48px)) 48px 0; }
+.hero__motion iframe {
+  display: block; border: 0; height: min(78vh, 640px); aspect-ratio: 9 / 16; width: auto; max-width: 100%;
+  background: #eef1f5; box-shadow: 0 30px 60px -30px rgba(23, 50, 79, .35), 0 0 0 1px var(--line);
+}
+.hero--motion .hero__text { padding-right: 32px; }
+@media (max-width: 860px) {
+  .hero--motion { grid-template-columns: 1fr; }
+  .hero--motion .hero__text { padding-right: 20px; }
+  .hero__motion { padding: 0 20px 48px; display: flex; justify-content: center; }
+  .hero__motion iframe { height: auto; width: min(100%, 360px); }
+}

@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saas Projects in beweging</title>
+<style>
+  /* Kleuren en letter van de website */
+  @font-face { font-family: "Montserrat"; src: url("%%FONT%%") format("woff2"); font-weight: 100 900; font-display: swap; }
+  :root {
+    --stone: #eef1f5; --ink: #0f1216; --ink-2: #3d444d; --muted: #5a626c;
+    --brand: #2b5a8a; --deep: #17324f; --light: #9dbbdc; --line: #dde2e9;
+    --font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--stone); overflow: hidden; }
+  body { font-family: var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .frame { position: relative; width: min(100vw, 100vh * 9 / 16); height: min(100vh, 100vw * 16 / 9); margin: 0 auto; overflow: hidden; background: var(--stone); container-type: inline-size; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .progress { position: absolute; top: 4.5cqw; left: 6cqw; right: 6cqw; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.6cqw; z-index: 3; }
+  .progress span { height: 2px; background: rgba(15, 18, 22, .12); overflow: hidden; }
+  .progress span i { display: block; height: 100%; width: 100%; background: var(--brand); transform: scaleX(0); transform-origin: left; }
+
+  .copy { position: absolute; left: 6cqw; right: 6cqw; bottom: 9cqw; z-index: 3; pointer-events: none; }
+  .eyebrow { display: flex; align-items: center; gap: 2.4cqw; font-size: 2.7cqw; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--brand); margin-bottom: 2.6cqw; }
+  .eyebrow::before { content: ""; width: 6cqw; height: 1px; background: currentColor; }
+  .title { font-size: 10cqw; font-weight: 700; letter-spacing: -.03em; line-height: 1.02; margin: 0; }
+  .title em { font-style: normal; color: var(--brand); }
+  .sub { font-size: 3.7cqw; color: var(--ink-2); margin: 2.4cqw 0 0; line-height: 1.45; }
+  .mask { overflow: hidden; display: block; padding-bottom: .08em; }
+  .mask > * { display: block; }
+
+  .end { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6cqw; pointer-events: none; opacity: 0; }
+  .end svg { width: 80cqw; height: auto; color: var(--ink); overflow: visible; }
+  .end p { margin: 0; font-size: 3.6cqw; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--brand); }
+  .end .rule { width: 0; height: 2px; background: var(--brand); }
+
+  .controls { position: absolute; right: 5cqw; top: 8.5cqw; z-index: 6; display: flex; gap: 2cqw; }
+  .controls button { appearance: none; border: 1px solid rgba(15, 18, 22, .18); background: rgba(255, 255, 255, .85); color: var(--ink); width: 9cqw; height: 9cqw; min-width: 34px; min-height: 34px; display: grid; place-items: center; cursor: pointer; border-radius: 50%; padding: 0; transition: background .2s, color .2s; }
+  .controls button:hover { background: var(--ink); color: #fff; }
+  .controls button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .controls svg { width: 46%; height: 46%; }
+</style>
+</head>
+<body>
+<div class="frame" id="frame">
+  <canvas id="c" aria-hidden="true"></canvas>
+  <div class="progress" aria-hidden="true"><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span></div>
+  <div class="copy" id="copy" aria-live="polite">
+    <div class="mask"><div class="eyebrow" id="eyebrow"></div></div>
+    <h1 class="title"><span class="mask"><span id="title"></span></span></h1>
+    <p class="sub"><span class="mask"><span id="sub"></span></span></p>
+  </div>
+  <div class="end" id="end" aria-hidden="true">
+    <svg viewBox="0 0 2376 944" role="img" aria-label="Saas Projects"><path fill="currentColor" fill-rule="evenodd" d="%%LOGO_D%%"/></svg>
+    <div class="rule" id="rule"></div>
+    <p id="tagline">Ondernemen met vakmanschap</p>
+  </div>
+  <div class="controls">
+    <button id="sound" type="button" aria-pressed="false" aria-label="Geluid aanzetten" title="Geluid aan/uit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path id="waves" d="m22 9-6 6M16 9l6 6"/></svg>
+    </button>
+    <button id="replay" type="button" aria-label="Opnieuw afspelen" title="Opnieuw afspelen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+    </button>
+  </div>
+</div>
+
+<script src="%%THREE%%"></script>
+<script src="%%SVGLOADER%%"></script>
+<script src="%%GSAP%%"></script>
+<script>
+(function () {
+  'use strict';
+  var params = new URLSearchParams(location.search);
+  if (params.has('embed')) document.body.classList.add('embed');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Palette (site tokens) ---------- */
+  var C = { stone: 0xeef1f5, ink: 0x0f1216, brand: 0x2b5a8a, deep: 0x17324f, light: 0x9dbbdc, white: 0xffffff, line: 0xdde2e9 };
+  var HOUSE_D = '%%HOUSE_D%%';
+
+  /* ---------- Renderer, scene, camera ---------- */
+  var canvas = document.getElementById('c');
+  var frame = document.getElementById('frame');
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(C.stone);
+  scene.fog = new THREE.Fog(C.stone, 14, 34);
+
+  var camera = new THREE.PerspectiveCamera(36, 9 / 16, 0.1, 200);
+
+  function resize() {
+    var w = frame.clientWidth, h = frame.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ---------- Lights ---------- */
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xc8d4e2, 0.95));
+  var sun = new THREE.DirectionalLight(0xffffff, 0.9);
+  sun.position.set(6, 12, 8);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
+  sun.shadow.camera.top = 6; sun.shadow.camera.bottom = -6;
+  sun.shadow.radius = 4;
+  scene.add(sun); scene.add(sun.target);
+  var rim = new THREE.DirectionalLight(0x9dbbdc, 0.45);
+  rim.position.set(-8, 5, -6);
+  scene.add(rim);
+
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 60), new THREE.ShadowMaterial({ opacity: 0.12 }));
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  /* ---------- Helpers ---------- */
+  function mat(color, o) {
+    o = o || {};
+    return new THREE.MeshStandardMaterial({ color: color, roughness: o.r != null ? o.r : 0.55, metalness: o.m || 0, transparent: !!o.t, opacity: o.t ? o.t : 1 });
+  }
+  function mesh(geo, material, shadow) {
+    var m = new THREE.Mesh(geo, material);
+    m.castShadow = shadow !== false;
+    m.receiveShadow = true;
+    return m;
+  }
+  function box(w, h, d, color, o) { return mesh(new THREE.BoxGeometry(w, h, d), mat(color, o)); }
+  function tube(a, b, r, color) {
+    var dir = new THREE.Vector3().subVectors(b, a);
+    var m = mesh(new THREE.CylinderGeometry(r, r, dir.length(), 12), mat(color, { r: 0.35, m: 0.2 }));
+    m.position.copy(a).add(b).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    return m;
+  }
+  function textSprite(text) {
+    var cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+    var g = cv.getContext('2d');
+    g.fillStyle = '#ffffff'; g.strokeStyle = '#2b5a8a'; g.lineWidth = 6;
+    var r = 30; g.beginPath(); g.moveTo(r + 6, 6); g.arcTo(250, 6, 250, 122, r); g.arcTo(250, 122, 6, 122, r); g.arcTo(6, 122, 6, 6, r); g.arcTo(6, 6, 250, 6, r); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#17324f'; g.font = '700 64px Montserrat, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, 128, 68);
+    var tex = new THREE.CanvasTexture(cv); tex.anisotropy = 4;
+    var s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+    s.scale.set(0.62, 0.31, 1);
+    return s;
+  }
+
+  var GAP = 16;
+  var groups = [];
+  function stage(i) { var g = new THREE.Group(); g.position.x = i * GAP; scene.add(g); groups.push(g); return g; }
+
+  /* ---------- Scene 1: dropshipping (leverancier -> klant) ---------- */
+  var s1 = stage(0); s1.scale.setScalar(0.86);
+  var depot = new THREE.Group();
+  depot.add(box(1.1, 1.0, 1.0, C.white)); depot.children[0].position.y = 0.5;
+  var roof1 = box(1.16, 0.12, 1.06, C.brand); roof1.position.y = 1.06; depot.add(roof1);
+  var door = box(0.5, 0.55, 0.02, C.deep); door.position.set(0, 0.28, 0.51); depot.add(door);
+  depot.position.set(-1.25, 0, -0.2);
+  s1.add(depot);
+  var home = new THREE.Group();
+  var hb = box(0.8, 0.62, 0.8, C.white); hb.position.y = 0.31; home.add(hb);
+  var hr = mesh(new THREE.ConeGeometry(0.66, 0.46, 4), mat(C.deep)); hr.position.y = 0.85; hr.rotation.y = Math.PI / 4; home.add(hr);
+  var hw = box(0.22, 0.22, 0.02, C.light, { r: 0.1 }); hw.position.set(0, 0.36, 0.41); home.add(hw);
+  home.position.set(1.3, 0, 0.1);
+  s1.add(home);
+  var arcCurve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(-1.0, 1.2, -0.1), new THREE.Vector3(0.1, 2.6, 0.2), new THREE.Vector3(1.25, 1.15, 0.1));
+  var arcLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcCurve.getPoints(48)), new THREE.LineDashedMaterial({ color: C.brand, dashSize: 0.08, gapSize: 0.07 }));
+  arcLine.computeLineDistances();
+  s1.add(arcLine);
+  var parcels = [];
+  for (var p = 0; p < 4; p++) {
+    var pg = new THREE.Group();
+    pg.add(box(0.3, 0.24, 0.3, 0xf6f1e7, { r: 0.8 }));
+    var tape = box(0.31, 0.25, 0.06, C.brand, { r: 0.6 }); pg.add(tape);
+    pg.userData.t = 0;
+    s1.add(pg); parcels.push(pg);
+  }
+  function placeParcel(pg) {
+    var t = Math.min(Math.max(pg.userData.t, 0), 1);
+    pg.position.copy(arcCurve.getPoint(t));
+    pg.rotation.set(t * 2.2, t * 3.1, t * 0.8);
+    var s = t <= 0 || t >= 1 ? 0.001 : Math.min(1, Math.min(t, 1 - t) * 6);
+    pg.scale.setScalar(s);
+  }
+
+  /* ---------- Scene 2: bol.com huis, tuin & keuken ---------- */
+  var s2 = stage(1);
+  var plinth = mesh(new THREE.CylinderGeometry(1.45, 1.55, 0.3, 64), mat(C.white, { r: 0.4 }));
+  plinth.position.y = 0.15; s2.add(plinth);
+  var turntable = new THREE.Group(); turntable.position.y = 0.3; s2.add(turntable);
+  // keuken: mok
+  var mug = new THREE.Group();
+  mug.add(mesh(new THREE.CylinderGeometry(0.26, 0.24, 0.52, 40), mat(C.brand, { r: 0.3 }))); mug.children[0].position.y = 0.26;
+  var handle = mesh(new THREE.TorusGeometry(0.14, 0.04, 12, 32), mat(C.brand, { r: 0.3 })); handle.position.set(0.28, 0.27, 0); mug.add(handle);
+  mug.position.set(-0.75, 0, 0.35); turntable.add(mug);
+  // tuin: plant
+  var plant = new THREE.Group();
+  var pot = mesh(new THREE.CylinderGeometry(0.28, 0.2, 0.42, 32), mat(C.deep, { r: 0.6 })); pot.position.y = 0.21; plant.add(pot);
+  [[0, 0.72, 0, 0.3], [0.18, 0.95, 0.05, 0.22], [-0.16, 0.9, -0.05, 0.2]].forEach(function (q) {
+    var leaf = mesh(new THREE.IcosahedronGeometry(q[3], 1), mat(C.light, { r: 0.7 })); leaf.position.set(q[0], q[1], q[2]); plant.add(leaf);
+  });
+  plant.position.set(0.1, 0, -0.55); turntable.add(plant);
+  // huis: lamp
+  var lamp = new THREE.Group();
+  var foot = mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.06, 32), mat(C.ink, { r: 0.3, m: 0.4 })); foot.position.y = 0.03; lamp.add(foot);
+  var pole = mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.0, 12), mat(C.ink, { r: 0.3, m: 0.4 })); pole.position.y = 0.53; lamp.add(pole);
+  var shade = mesh(new THREE.CylinderGeometry(0.16, 0.36, 0.36, 40, 1, true), mat(C.white, { r: 0.5 })); shade.material.side = THREE.DoubleSide; shade.position.y = 1.1; lamp.add(shade);
+  lamp.position.set(0.8, 0, 0.3); turntable.add(lamp);
+  var products = [mug, plant, lamp];
+
+  /* ---------- Scene 3: kozijnen ---------- */
+  var s3 = stage(2);
+  var win = new THREE.Group(); win.position.y = 1.35; s3.add(win);
+  var W = 1.6, H = 2.1, T = 0.13, D = 0.22;
+  var bars = [
+    { m: box(W, T, D, C.deep, { r: 0.35 }), to: [0, H / 2 - T / 2, 0], from: [0, 3.2, 0] },
+    { m: box(W, T, D, C.deep, { r: 0.35 }), to: [0, -H / 2 + T / 2, 0], from: [0, -3.2, 0] },
+    { m: box(T, H, D, C.deep, { r: 0.35 }), to: [-W / 2 + T / 2, 0, 0], from: [-3.4, 0, 0] },
+    { m: box(T, H, D, C.deep, { r: 0.35 }), to: [W / 2 - T / 2, 0, 0], from: [3.4, 0, 0] },
+    { m: box(T * 0.7, H - T * 2, D * 0.8, C.brand, { r: 0.4 }), to: [0, 0, 0], from: [0, 0, 3.5] },
+    { m: box(W - T * 2, T * 0.7, D * 0.8, C.brand, { r: 0.4 }), to: [0, 0.18, 0], from: [0, 0.18, -3.5] }
+  ];
+  bars.forEach(function (b) { b.m.position.set(b.to[0], b.to[1], b.to[2]); win.add(b.m); });
+  var glassMat = new THREE.MeshStandardMaterial({ color: C.light, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0 });
+  var glass = mesh(new THREE.PlaneGeometry(W - T * 2, H - T * 2), glassMat, false);
+  glass.position.z = -0.02; win.add(glass);
+  var sill = box(W + 0.3, 0.08, 0.45, C.white, { r: 0.6 }); sill.position.set(0, -H / 2 - 0.02, 0.12); win.add(sill);
+
+  /* ---------- Scene 4: VanWiel fietsen in vijf landen ---------- */
+  var s4 = stage(3);
+  var bike = new THREE.Group(); s4.add(bike);
+  function wheel() {
+    var g = new THREE.Group();
+    g.add(mesh(new THREE.TorusGeometry(0.52, 0.045, 14, 64), mat(C.ink, { r: 0.6 })));
+    g.add(mesh(new THREE.TorusGeometry(0.46, 0.018, 8, 64), mat(0x8a94a0, { r: 0.3, m: 0.6 })));
+    for (var k = 0; k < 8; k++) {
+      var sp = mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.92, 6), mat(0xb8c0ca, { r: 0.3, m: 0.6 }), false);
+      sp.rotation.z = k * Math.PI / 8; g.add(sp);
+    }
+    g.add(mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.12, 16), mat(C.ink)));
+    g.children[g.children.length - 1].rotation.x = Math.PI / 2;
+    return g;
+  }
+  var V = function (x, y) { return new THREE.Vector3(x, y, 0); };
+  var rearW = wheel(); rearW.position.set(-0.82, 0.57, 0); bike.add(rearW);
+  var frontW = wheel(); frontW.position.set(0.86, 0.57, 0); bike.add(frontW);
+  var Rh = V(-0.82, 0.57), Bb = V(-0.08, 0.5), St = V(-0.3, 1.28), Ht = V(0.6, 1.3), Hb = V(0.68, 1.02), Fh = V(0.86, 0.57);
+  [[Rh, Bb], [Rh, St], [Bb, St], [St, Ht], [Bb, Hb], [Hb, Fh], [Ht, Hb]].forEach(function (s) { bike.add(tube(s[0], s[1], 0.035, C.brand)); });
+  var saddle = box(0.3, 0.06, 0.14, C.ink, { r: 0.7 }); saddle.position.set(-0.33, 1.38, 0); bike.add(saddle);
+  bike.add(tube(Ht, V(0.56, 1.46), 0.025, C.ink));
+  var bar = mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.5, 10), mat(C.ink)); bar.rotation.x = Math.PI / 2; bar.position.set(0.56, 1.46, 0); bike.add(bar);
+  var flags = ['NL', 'BE', 'DE', 'FR', 'AT'].map(function (c, i) {
+    var sp = textSprite(c);
+    var a = -0.8 + i * 0.4;
+    sp.userData.base = new THREE.Vector3(a * 1.15, 2.25 + Math.cos(a * 1.3) * 0.32, 0);
+    sp.position.copy(sp.userData.base); sp.scale.multiplyScalar(0.001);
+    s4.add(sp); return sp;
+  });
+
+  /* ---------- Scene 5: nieuw project ---------- */
+  var s5 = stage(4);
+  var cubeWire = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, 1.5, 1.5)), new THREE.LineBasicMaterial({ color: C.brand }));
+  cubeWire.position.y = 1.5; s5.add(cubeWire);
+  var core = mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: C.light, emissive: C.brand, emissiveIntensity: 0.35, roughness: 0.3 }));
+  core.position.y = 1.5; s5.add(core);
+  var orbit = new THREE.Group(); orbit.position.y = 1.5; s5.add(orbit);
+  for (var o = 0; o < 6; o++) {
+    var dot = mesh(new THREE.SphereGeometry(0.05, 16, 16), mat(C.brand), false);
+    var ang = o / 6 * Math.PI * 2; dot.position.set(Math.cos(ang) * 1.25, Math.sin(ang * 2) * 0.25, Math.sin(ang) * 1.25);
+    orbit.add(dot);
+  }
+
+  /* ---------- Finale: het huisje uit het logo, in 3D ---------- */
+  var s6 = stage(5);
+  var houseGroup = new THREE.Group(); houseGroup.position.y = 1.55; s6.add(houseGroup);
+  var houseMesh;
+  try {
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 40 882 874"><path d="' + HOUSE_D + '"/></svg>';
+    var data = new THREE.SVGLoader().parse(svg);
+    var shapes = [];
+    data.paths.forEach(function (path) { shapes = shapes.concat(THREE.SVGLoader.createShapes(path)); });
+    var hg = new THREE.ExtrudeGeometry(shapes, { depth: 70, bevelEnabled: true, bevelThickness: 8, bevelSize: 5, bevelSegments: 3, curveSegments: 10 });
+    hg.center();
+    houseMesh = mesh(hg, new THREE.MeshStandardMaterial({ color: C.ink, roughness: 0.38, metalness: 0.25 }));
+    var hs = 0.0031; houseMesh.scale.set(hs, -hs, hs);
+  } catch (e) {
+    houseMesh = box(2.6, 2.6, 0.2, C.ink);
+  }
+  houseGroup.add(houseMesh);
+  var shards = [];
+  var shardColors = [C.brand, C.deep, C.light, C.white, C.brand];
+  for (var k = 0; k < 10; k++) {
+    var sh = box(0.18, 0.18, 0.18, shardColors[k % 5], { r: 0.4 });
+    var a2 = k / 10 * Math.PI * 2;
+    sh.userData.from = new THREE.Vector3(Math.cos(a2) * 3.2, 1.55 + Math.sin(a2 * 1.7) * 1.8, Math.sin(a2) * 2.4);
+    sh.position.copy(sh.userData.from); s6.add(sh); shards.push(sh);
+  }
+
+  /* ---------- Camera rig ---------- */
+  var rig = { x: -1.6, y: 2.4, z: 8.4, tx: 0, ty: 1.0, tz: 0, roll: 0 };
+  function applyCamera() {
+    camera.position.set(rig.x, rig.y, rig.z);
+    camera.lookAt(rig.tx, rig.ty, rig.tz);
+    camera.rotation.z += rig.roll;
+    sun.position.set(rig.tx + 6, 12, 8);
+    sun.target.position.set(rig.tx, 0, 0);
+  }
+
+  /* ---------- Copy (tekst) ---------- */
+  var scenesCopy = [
+    { e: 'Dropshipping', t: 'Webwinkels', s: 'Van leverancier direct naar de klant.' },
+    { e: 'Verkooppartner bol.com', t: 'Huis, tuin <em>&amp;</em> keuken', s: 'Voor klanten in Nederland en België.' },
+    { e: 'Bouw &amp; montage', t: 'Kozijnen', s: 'Kunststof en aluminium, door heel Nederland.' },
+    { e: 'VanWiel', t: 'Fietsen <em>&amp;</em> e-bikes', s: 'Online, in vijf landen.' },
+    { e: 'In ontwikkeling', t: 'Nieuw <em>project</em>', s: 'Binnenkort meer.' }
+  ];
+  var elE = document.getElementById('eyebrow'), elT = document.getElementById('title'), elS = document.getElementById('sub');
+  var progBars = Array.prototype.slice.call(document.querySelectorAll('.progress i'));
+
+  /* ---------- Sound (Web Audio, subtiel; standaard uit) ---------- */
+  var audio = null, soundOn = false;
+  function ac() { if (!audio) { var A = window.AudioContext || window.webkitAudioContext; if (A) audio = new A(); } return audio; }
+  function noiseBuffer(ctx) {
+    var b = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate), d = b.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return b;
+  }
+  function whoosh() {
+    if (!soundOn || !audio) return;
+    var t = audio.currentTime, src = audio.createBufferSource(); src.buffer = noiseBuffer(audio);
+    var f = audio.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.9;
+    f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(2600, t + 0.28); f.frequency.exponentialRampToValueAtTime(700, t + 0.5);
+    var g = audio.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.11, t + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    src.connect(f).connect(g).connect(audio.destination); src.start(t); src.stop(t + 0.55);
+  }
+  function tick(freq) {
+    if (!soundOn || !audio) return;
+    var t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(freq || 1320, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.14);
+  }
+  function chord() {
+    if (!soundOn || !audio) return;
+    var t = audio.currentTime;
+    var thump = audio.createOscillator(), tg = audio.createGain();
+    thump.type = 'sine'; thump.frequency.setValueAtTime(140, t); thump.frequency.exponentialRampToValueAtTime(48, t + 0.35);
+    tg.gain.setValueAtTime(0.0001, t); tg.gain.exponentialRampToValueAtTime(0.22, t + 0.01); tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+    thump.connect(tg).connect(audio.destination); thump.start(t); thump.stop(t + 0.5);
+    [523.25, 659.25, 783.99].forEach(function (fq, i) {
+      var o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.value = fq;
+      var s = t + 0.05 + i * 0.04;
+      g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.035, s + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, s + 1.4);
+      o.connect(g).connect(audio.destination); o.start(s); o.stop(s + 1.5);
+    });
+  }
+
+  /* ---------- Timeline (7 s) ---------- */
+  gsap.ticker.fps(60);
+  var tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.inOut' } });
+  var X = function (i) { return i * GAP; };
+
+  function showCopy(i, at) {
+    var c = scenesCopy[i];
+    tl.call(function () {
+      elE.innerHTML = c.e; elT.innerHTML = c.t; elS.innerHTML = c.s; tick(i === 4 ? 1568 : 1320);
+    }, null, at);
+    tl.fromTo([elE, elT, elS], { yPercent: 110 }, { yPercent: 0, duration: 0.45, ease: 'power4.out', stagger: 0.05 }, at);
+    tl.fromTo(progBars[i], { scaleX: 0 }, { scaleX: 1, duration: i === 4 ? 0.7 : 1.15, ease: 'none' }, at);
+  }
+  function hideCopy(at) { tl.to([elE, elT, elS], { yPercent: -110, duration: 0.25, ease: 'power2.in', stagger: 0.03 }, at); }
+  function move(to, at, dur, ease) { tl.to(rig, Object.assign({ duration: dur, ease: ease || 'power3.inOut' }, to), at); }
+
+  // reset state at start (replay-safe)
+  tl.set(rig, { x: X(0) - 1.2, y: 2.8, z: 10.2, tx: X(0), ty: 1.0, tz: 0, roll: 0 }, 0);
+  tl.set(progBars, { scaleX: 0 }, 0);
+  tl.set('#end', { opacity: 0 }, 0);
+  tl.set('#rule', { width: 0 }, 0);
+  tl.set('#copy', { opacity: 1 }, 0);
+
+  // Scene 1: 0 - 1.25
+  showCopy(0, 0.05);
+  move({ x: X(0) + 0.9, y: 2.0, z: 9.4, tx: X(0) - 0.05, ty: 0.95 }, 0, 1.25, 'sine.inOut');
+  tl.fromTo([depot.scale, home.scale], { x: 0.001, y: 0.001, z: 0.001 }, { x: 1, y: 1, z: 1, duration: 0.45, ease: 'back.out(1.6)', stagger: 0.08 }, 0.05);
+  tl.fromTo(arcLine.material, { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.25);
+  parcels.forEach(function (pg, i) { tl.fromTo(pg.userData, { t: 0 }, { t: 1, duration: 0.75, ease: 'power1.inOut', onUpdate: function () { placeParcel(pg); } }, 0.25 + i * 0.16); });
+  hideCopy(1.05);
+
+  // Transition -> Scene 2: 1.15 - 1.5 ; scene 1.3 - 2.5
+  tl.call(whoosh, null, 1.12);
+  move({ x: X(1) - 2.2, y: 3.0, z: 7.6, tx: X(1), ty: 0.9, roll: 0.06 }, 1.12, 0.42);
+  tl.to(rig, { roll: 0, duration: 0.3, ease: 'power2.out' }, 1.5);
+  showCopy(1, 1.35);
+  move({ x: X(1) + 1.8, y: 2.5, z: 7.0, ty: 0.75 }, 1.54, 0.96, 'sine.inOut');
+  tl.fromTo(plinth.scale, { x: 0.001, z: 0.001 }, { x: 1, z: 1, duration: 0.4, ease: 'power3.out' }, 1.3);
+  products.forEach(function (pr, i) { tl.fromTo(pr.scale, { x: 0.001, y: 0.001, z: 0.001 }, { x: 1, y: 1, z: 1, duration: 0.45, ease: 'back.out(2)' }, 1.45 + i * 0.12); });
+  tl.fromTo(turntable.rotation, { y: -0.6 }, { y: 1.4, duration: 1.4, ease: 'power1.inOut' }, 1.3);
+  hideCopy(2.3);
+
+  // Transition -> Scene 3: 2.38 - 2.8 ; scene 2.55 - 3.75
+  tl.call(whoosh, null, 2.36);
+  move({ x: X(2) + 2.4, y: 2.0, z: 8.8, tx: X(2), ty: 1.35, roll: -0.06 }, 2.36, 0.42);
+  tl.to(rig, { roll: 0, duration: 0.3, ease: 'power2.out' }, 2.74);
+  showCopy(2, 2.6);
+  move({ x: X(2) - 1.2, y: 1.8, z: 7.4, ty: 1.4 }, 2.78, 0.97, 'sine.inOut');
+  var frameBars = [];
+  win.children.forEach(function (c) { if (c !== glass && c !== sill) frameBars.push(c); });
+  frameBars.forEach(function (m, i) {
+    var b = [{ f: [0, 3.2, 0] }, { f: [0, -3.2, 0] }, { f: [-3.4, 0, 0] }, { f: [3.4, 0, 0] }, { f: [0, 0, 3.5] }, { f: [0, 0, -3.5] }][i];
+    var to = { x: m.position.x, y: m.position.y, z: m.position.z };
+    if (!m.userData.home) m.userData.home = to; else to = m.userData.home;
+    tl.fromTo(m.position, { x: to.x + b.f[0], y: to.y + b.f[1], z: to.z + b.f[2] }, { x: to.x, y: to.y, z: to.z, duration: 0.55, ease: 'power4.out' }, 2.55 + i * 0.06);
+  });
+  tl.call(function () { tick(880); }, null, 3.05);
+  tl.fromTo(glassMat, { opacity: 0 }, { opacity: 0.55, duration: 0.4, ease: 'power2.out' }, 3.0);
+  tl.fromTo(sill.scale, { x: 0.001 }, { x: 1, duration: 0.4, ease: 'power3.out' }, 2.9);
+  tl.fromTo(win.rotation, { y: -0.5 }, { y: 0.25, duration: 1.2, ease: 'power1.inOut' }, 2.55);
+  hideCopy(3.55);
+
+  // Transition -> Scene 4: 3.62 - 4.05 ; scene 3.8 - 4.95
+  tl.call(whoosh, null, 3.6);
+  move({ x: X(3) - 0.6, y: 2.2, z: 9.4, tx: X(3), ty: 1.25, roll: 0.05 }, 3.6, 0.42);
+  tl.to(rig, { roll: 0, duration: 0.3, ease: 'power2.out' }, 3.98);
+  showCopy(3, 3.85);
+  move({ x: X(3) + 0.8, y: 1.9, z: 8.6, tx: X(3) + 0.1 }, 4.02, 0.93, 'sine.inOut');
+  tl.fromTo(bike.position, { x: -2.6 }, { x: 0.15, duration: 0.85, ease: 'power3.out' }, 3.62);
+  tl.fromTo([rearW.rotation, frontW.rotation], { z: 0 }, { z: -5.2, duration: 0.85, ease: 'power3.out' }, 3.62);
+  flags.forEach(function (f, i) {
+    tl.fromTo(f.scale, { x: 0.001, y: 0.001 }, { x: 0.62, y: 0.31, duration: 0.35, ease: 'back.out(2.2)' }, 4.05 + i * 0.08);
+    tl.call(function () { tick(1046 + i * 120); }, null, 4.05 + i * 0.08);
+  });
+  hideCopy(4.75);
+
+  // Transition -> Scene 5: 4.82 - 5.2 ; scene 4.98 - 5.62
+  tl.call(whoosh, null, 4.8);
+  move({ x: X(4) + 1.6, y: 2.6, z: 7.2, tx: X(4), ty: 1.5, roll: -0.05 }, 4.8, 0.4);
+  tl.to(rig, { roll: 0, duration: 0.25, ease: 'power2.out' }, 5.15);
+  showCopy(4, 5.0);
+  move({ x: X(4) - 0.8, y: 2.0, z: 6.4 }, 5.2, 0.5, 'sine.inOut');
+  tl.fromTo(cubeWire.scale, { x: 0.001, y: 0.001, z: 0.001 }, { x: 1, y: 1, z: 1, duration: 0.4, ease: 'back.out(1.8)' }, 4.95);
+  tl.fromTo(cubeWire.rotation, { x: 0.4, y: 0 }, { x: 0.9, y: 1.6, duration: 0.8, ease: 'power1.inOut' }, 4.95);
+  tl.fromTo(core.scale, { x: 0.001, y: 0.001, z: 0.001 }, { x: 1, y: 1, z: 1, duration: 0.35, ease: 'back.out(2.4)' }, 5.1);
+  tl.fromTo(core.rotation, { x: 0, y: 0 }, { x: -1.2, y: -2, duration: 0.8, ease: 'power1.inOut' }, 4.95);
+  tl.fromTo(orbit.rotation, { y: 0 }, { y: 2.4, duration: 0.8, ease: 'none' }, 4.95);
+  hideCopy(5.5);
+
+  // Finale: 5.6 - 7.0
+  tl.call(whoosh, null, 5.55);
+  move({ x: X(5) - 2.4, y: 3.2, z: 9.0, tx: X(5), ty: 1.55, roll: 0.04 }, 5.55, 0.45);
+  tl.to(rig, { roll: 0, duration: 0.3, ease: 'power2.out' }, 5.95);
+  tl.to('#copy', { opacity: 0, duration: 0.2 }, 5.55);
+  shards.forEach(function (sh, i) {
+    var f = sh.userData.from;
+    tl.fromTo(sh.position, { x: f.x, y: f.y, z: f.z }, { x: 0, y: 1.55, z: 0, duration: 0.5, ease: 'power3.in' }, 5.62 + i * 0.015);
+    tl.fromTo(sh.scale, { x: 1, y: 1, z: 1 }, { x: 0.001, y: 0.001, z: 0.001, duration: 0.5, ease: 'power3.in' }, 5.62 + i * 0.015);
+  });
+  tl.fromTo(houseGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, { x: 1, y: 1, z: 1, duration: 0.55, ease: 'back.out(1.5)' }, 6.02);
+  tl.fromTo(houseGroup.rotation, { y: -1.1 }, { y: 0, duration: 0.7, ease: 'power3.out' }, 6.02);
+  tl.call(chord, null, 6.05);
+  move({ x: X(5), y: 1.6, z: 6.2, ty: 1.55 }, 6.0, 0.6, 'power3.out');
+  tl.to(canvas, { opacity: 0, duration: 0.35, ease: 'power2.inOut' }, 6.5);
+  tl.fromTo('#end', { opacity: 0 }, { opacity: 1, duration: 0.35, ease: 'power2.out' }, 6.5);
+  tl.fromTo('#end svg', { scale: 0.86 }, { scale: 1, duration: 0.5, ease: 'power3.out' }, 6.5);
+  tl.fromTo('#rule', { width: 0 }, { width: '22cqw', duration: 0.4, ease: 'power3.out' }, 6.6);
+  tl.fromTo('#tagline', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }, 6.62);
+  tl.set({}, {}, 7.0);
+  tl.set(canvas, { opacity: 1 }, 0);
+
+  /* ---------- Render loop: only while playing ---------- */
+  var running = false;
+  function render() { applyCamera(); renderer.render(scene, camera); }
+  function startLoop() { if (!running) { running = true; gsap.ticker.add(render); } }
+  function stopLoop() { if (running) { running = false; gsap.ticker.remove(render); render(); } }
+  tl.eventCallback('onComplete', function () { setTimeout(stopLoop, 120); });
+
+  function play() {
+    if (params.has('t')) { tl.seek(parseFloat(params.get('t')) || 0, false).pause(); render(); return; }
+    startLoop();
+    if (reduce) { tl.progress(1).pause(); stopLoop(); return; }
+    tl.restart();
+  }
+
+  /* ---------- Controls ---------- */
+  var soundBtn = document.getElementById('sound');
+  soundBtn.addEventListener('click', function () {
+    soundOn = !soundOn;
+    if (soundOn) { var c = ac(); if (c && c.state === 'suspended') c.resume(); }
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+    soundBtn.setAttribute('aria-label', soundOn ? 'Geluid uitzetten' : 'Geluid aanzetten');
+    document.getElementById('waves').setAttribute('d', soundOn ? 'M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14' : 'm22 9-6 6M16 9l6 6');
+    if (soundOn && !tl.isActive()) play();
+  });
+  document.getElementById('replay').addEventListener('click', play);
+
+  /* Start: wait for the font so canvas labels use Montserrat */
+  var go = function () { resize(); play(); };
+  if (document.fonts && document.fonts.load) { document.fonts.load('700 64px Montserrat').then(go, go); } else { go(); }
+})();
+</script>
+</body>
+</html>
