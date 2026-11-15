@@ -35,6 +35,7 @@ def header(current, dark):
       <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
       <nav class="nav" id="nav" aria-label="Hoofdmenu">
 {links}
+        <div class="nav__contact"><a href="tel:+31626889789">06-26889789</a><a href="mailto:info@saasprojects.nl">info@saasprojects.nl</a></div>
       </nav>
     </div>
   </header>'''
