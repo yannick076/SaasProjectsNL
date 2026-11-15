@@ -197,5 +197,6 @@ for src in sorted(SRC.glob("*.py")):
     exec(compile(src.read_text(encoding="utf-8"), str(src), "exec"), scope)
     html = page(scope["META"], scope["BODY"].strip("\n"))
     html = html.replace("__WEB3FORMS_KEY__", WEB3FORMS_KEY)
+    html = html.replace("assets/motion/intro.html?embed\"", "assets/motion/intro.html?embed&v=" + asset_version("assets/motion/intro.html") + "\"")
     (OUT / scope["META"]["file"]).write_text(html, encoding="utf-8")
     print("built", scope["META"]["file"])
