@@ -436,7 +436,7 @@
   });
   hideCopy(b + SC - 0.22);
 
-  /* Slot: alles komt samen in het logo */
+  /* Slot: alles komt samen in het logo; het 3D-huisje landt precies op het huisje van het logo */
   b = FIN;
   transition({ x: X(4) - 2.4, y: 3.2, z: 9.0, tx: X(4), ty: 1.55 }, b - 0.12, 0.04);
   tl.to('#copy', { opacity: 0, duration: 0.2 }, b - 0.1);
@@ -445,16 +445,38 @@
     tl.fromTo(sh.position, { x: f.x, y: f.y, z: f.z }, { x: 0, y: 1.55, z: 0, duration: 0.6, ease: 'power3.in' }, b + 0.05 + i * 0.02);
     tl.fromTo(sh.scale, { x: 1, y: 1, z: 1 }, { x: 0.001, y: 0.001, z: 0.001, duration: 0.6, ease: 'power3.in' }, b + 0.05 + i * 0.02);
   });
+  tl.set(houseGroup.position, { x: 0, y: 1.55 }, 0);
   tl.fromTo(houseGroup.scale, { x: 0.001, y: 0.001, z: 0.001 }, { x: 1, y: 1, z: 1, duration: 0.6, ease: 'back.out(1.5)' }, b + 0.55);
   tl.fromTo(houseGroup.rotation, { y: -1.1 }, { y: 0, duration: 0.9, ease: 'power3.out' }, b + 0.55);
   tl.call(chord, null, b + 0.6);
-  move({ x: X(4), y: 1.6, z: 6.2, ty: 1.55 }, b + 0.5, 0.9, 'power3.out');
-  tl.to(canvas, { opacity: 0, duration: 0.4, ease: 'power2.inOut' }, b + 1.35);
-  tl.fromTo('#end', { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power2.out' }, b + 1.35);
-  tl.fromTo('#end svg', { scale: 0.86 }, { scale: 1, duration: 0.6, ease: 'power3.out' }, b + 1.35);
-  tl.fromTo('#rule', { width: 0 }, { width: '22cqw', duration: 0.5, ease: 'power3.out' }, b + 1.5);
-  tl.fromTo('#tagline', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, b + 1.55);
-  tl.set({}, {}, b + 2.5);
+  move({ x: X(4), y: 1.55, z: 6.2, tx: X(4), ty: 1.55 }, b + 0.5, 0.9, 'power3.out');
+  // doelpositie berekenen uit de plek van het huisje in het platte logo
+  var LOGO_HOUSE = { cx: 0.128, h: 874 / 2376 };   // middelpunt en hoogte (als deel van de logobreedte)
+  var target = { s: 0.24, x: -0.55, y: 1.75 };
+  function computeTarget() {
+    var svgEl = document.querySelector('#end svg');
+    var fr = frame.getBoundingClientRect(), r = svgEl.getBoundingClientRect();
+    if (!r.width) return;
+    var vh = 2 * 6.2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));   // zichtbare hoogte op afstand 6.2
+    var vw = vh * camera.aspect;
+    var houseH = r.width * LOGO_HOUSE.h, houseCx = r.left + r.width * LOGO_HOUSE.cx, houseCy = r.top + r.height / 2;
+    target.s = (houseH / fr.height) * vh / 2.71;
+    target.x = ((houseCx - fr.left) / fr.width - 0.5) * vw;
+    target.y = 1.55 + (0.5 - (houseCy - fr.top) / fr.height) * vh;
+  }
+  tl.call(computeTarget, null, b + 1.4);
+  tl.fromTo(floor.material, { opacity: 0.12 }, { opacity: 0, duration: 0.5, ease: 'power1.out' }, b + 1.45);
+  tl.to(houseGroup.scale, { x: function () { return target.s; }, y: function () { return target.s; }, z: function () { return target.s; }, duration: 0.8, ease: 'power3.inOut' }, b + 1.45);
+  tl.to(houseGroup.position, { x: function () { return target.x; }, y: function () { return target.y; }, duration: 0.8, ease: 'power3.inOut' }, b + 1.45);
+  // tekst van het logo schuift erin (het huisje van het platte logo blijft nog verborgen)
+  tl.set('#end', { opacity: 1 }, b + 1.6);
+  tl.fromTo('#end svg', { clipPath: 'inset(0% 0% 0% 40%)', x: 24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }, b + 1.75);
+  tl.fromTo('#rule', { width: 0 }, { width: '22cqw', duration: 0.5, ease: 'power3.out' }, b + 1.95);
+  tl.fromTo('#tagline', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, b + 2.0);
+  // naadloze wissel: 3D-huisje -> plat huisje op dezelfde plek
+  tl.to('#end svg', { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.35, ease: 'power2.inOut' }, b + 2.3);
+  tl.fromTo(canvas, { opacity: 1 }, { opacity: 0, duration: 0.3, ease: 'power1.inOut', immediateRender: false }, b + 2.3);
+  tl.set({}, {}, b + 3.2);
 
   /* ---------- Render loop: only while playing ---------- */
   var running = false;
