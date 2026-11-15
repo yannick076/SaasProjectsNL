@@ -94,11 +94,13 @@
   scene.fog = new THREE.Fog(C.stone, 14, 34);
 
   var camera = new THREE.PerspectiveCamera(36, 9 / 16, 0.1, 200);
+  var VIEW_SHIFT = 0.1;
 
   function resize() {
     var w = frame.clientWidth, h = frame.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    camera.setViewOffset(w, h, 0, h * VIEW_SHIFT, w, h);   // beeld iets omhoog: minder lege ruimte bovenin
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
@@ -462,7 +464,7 @@
     var houseH = r.width * LOGO_HOUSE.h, houseCx = r.left + r.width * LOGO_HOUSE.cx, houseCy = r.top + r.height / 2;
     target.s = (houseH / fr.height) * vh / 2.71;
     target.x = ((houseCx - fr.left) / fr.width - 0.5) * vw;
-    target.y = 1.55 + (0.5 - (houseCy - fr.top) / fr.height) * vh;
+    target.y = 1.55 + (0.5 - VIEW_SHIFT - (houseCy - fr.top) / fr.height) * vh;
   }
   tl.call(computeTarget, null, b + 1.4);
   tl.fromTo(floor.material, { opacity: 0.12 }, { opacity: 0, duration: 0.5, ease: 'power1.out' }, b + 1.45);
